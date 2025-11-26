@@ -7,7 +7,7 @@ Self-contained, cryptographically verified evidence packages for AI systems.
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Status](https://img.shields.io/badge/status-production--ready-green.svg)](https://pypi.org/project/epi-recorder/)
-[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://pypi.org/project/epi-recorder/)
+[![Version](https://img.shields.io/badge/version-1.1.1-blue.svg)](https://pypi.org/project/epi-recorder/)
 [![GitHub](https://img.shields.io/badge/GitHub-EPI--V1.1-black.svg?logo=github)](https://github.com/mohdibrahimaiml/EPI-V1.1)
 
 ---
@@ -53,7 +53,7 @@ That's it! Your AI workflow is now captured, signed, and viewable.
 
 ---
 
-## 🆕 What's New in v1.1.0
+## 🆕 What's New in v1.1.1
 
 ✅ **Windows Compatibility** - Full support for Windows CMD and PowerShell  
 ✅ **Unicode Fixes** - Clean ASCII output, no encoding errors  
@@ -451,7 +451,7 @@ epi-recorder/
 ✅ **Phase 3:** Viewer MVP (complete)  
 ✅ **Phase 4:** Polish & Production (complete)
 
-**Current Release:** v1.1.0 - Production Ready
+**Current Release:** v1.1.1 - Production Ready
 
 ---
 
