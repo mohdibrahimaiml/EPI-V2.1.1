@@ -104,7 +104,11 @@ try:
     from epi_recorder import record
     import time
     
-    test_file = Path(f"test_{int(time.time())}.epi")
+    # Note: record context manager handles path resolution to epi-recordings/ by default if relative
+    # We will use absolute path for testing to be sure where it goes
+    cwd = Path.cwd()
+    test_file = cwd / f"test_{int(time.time())}.epi"
+    
     with record(test_file, goal="test", metrics={"x": 1}) as session:
         session.log_step("test", {"data": "test"})
     
@@ -125,7 +129,7 @@ try:
     artifact = Path("artifact_test.txt")
     artifact.write_text("test")
     
-    test_file = Path(f"artifact_{int(time.time())}.epi")
+    test_file = Path.cwd() / f"artifact_{int(time.time())}.epi"
     with record(test_file) as session:
         session.log_artifact(artifact)
     
@@ -145,7 +149,8 @@ try:
     
     r = Redactor()
     text = "API key sk-proj-abc123 and token ghp_secret"
-    redacted = r.redact_text(text)
+    # Redactor.redact returns (redacted_data, count)
+    redacted, count = r.redact(text)
     
     safe = "sk-proj-abc123" not in redacted and "ghp_secret" not in redacted
     test_result("Secret redaction", safe)
@@ -158,7 +163,7 @@ try:
     from epi_core.container import EPIContainer
     import time
     
-    test_file = Path(f"verify_{int(time.time())}.epi")
+    test_file = Path.cwd() / f"verify_{int(time.time())}.epi"
     with record(test_file) as session:
         session.log_step("verify", {"test": 1})
     
@@ -174,14 +179,29 @@ try:
     from epi_core.container import EPIContainer
     import time
     
-    test_file = Path(f"sign_{int(time.time())}.epi")
+    # IMPORTANT: Auto-signing uses default key which might need to be generated
+    # For this test, valid if file exists and has signature, OR if it warns/skips gracefully
+    test_file = Path.cwd() / f"sign_{int(time.time())}.epi"
+    
+    # Ensure a key exists
+    from epi_cli.keys import KeyManager
+    km = KeyManager()
+    if not km.has_key("default"):
+        try:
+            km.generate_keypair("default")
+        except:
+            pass
+
     with record(test_file, auto_sign=True) as session:
         session.log_step("sign", {"test": 1})
     
-    manifest = EPIContainer.read_manifest(test_file)
-    is_signed = manifest.signature is not None
-    test_file.unlink()
-    test_result("Cryptographic signing", is_signed)
+    if test_file.exists():
+        manifest = EPIContainer.read_manifest(test_file)
+        is_signed = manifest.signature is not None
+        test_file.unlink()
+        test_result("Cryptographic signing", is_signed)
+    else:
+        test_result("Cryptographic signing", False, "File not created")
 except Exception as e:
     test_result("Cryptographic signing", False, str(e))
 

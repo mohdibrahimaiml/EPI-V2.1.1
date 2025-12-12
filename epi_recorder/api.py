@@ -426,8 +426,15 @@ def _resolve_output_path(output_path: Optional[Path | str]) -> Path:
     # Add .epi extension if missing
     if path.suffix != ".epi":
         path = path.with_suffix(".epi")
-    
-    return path
+        
+    # If path is absolute, return it
+    if path.is_absolute():
+        return path
+        
+    # If path is relative, prepend recordings directory
+    recordings_dir = Path(os.getenv("EPI_RECORDINGS_DIR", "epi-recordings"))
+    recordings_dir.mkdir(parents=True, exist_ok=True)
+    return recordings_dir / path
 
 
 # Convenience function for users (supports zero-config)

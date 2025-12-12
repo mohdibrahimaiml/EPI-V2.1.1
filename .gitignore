@@ -39,6 +39,30 @@ env/
 htmlcov/
 .tox/
 
+# Generated output files - DO NOT COMMIT
+*_results.json
+*_summary.json
+*_analysis.json
+output_artifact.json
+final_analysis.json
+sentiment_results.json
+sentiment_summary.json
+summary_insights.json
+text_summaries.json
+
+# Test artifacts and temporary files
+test_artifact.txt
+artifact_test.txt
+demo_comprehensive.epi
+test_metadata_*.epi
+test_steps_*.epi
+test_recording_*.epi
+system_test_recording.epi
+
+# Debug/temporary test scripts
+**/test_import.py
+**/test_script.py
+
 # EPI-specific
 *.epi
 .epi/
