@@ -42,7 +42,7 @@ example.epi (ZIP archive)
 │   └── ...
 ├── viewer/                     # Embedded Offline Viewer
 │   ├── index.html
-│   └── viewer_lite.css         # Inlined CSS (v2.1.0 change)
+│   └── viewer_lite.css         # Inlined CSS (v2.1.1 change)
 └── signatures/                 # (Optional) Detached signatures
 ```
 
