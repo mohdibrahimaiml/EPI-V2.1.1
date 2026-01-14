@@ -14,7 +14,7 @@ print(f"   25 + 17 = {result}")
 print("\n📝 Step 2: Creating some data...")
 data = {
     "name": "EPI Demo",
-    "version": "2.1.0",
+    "version": "2.1.1",
     "status": "Recording in progress!"
 }
 print(f"   Created data: {data}")
