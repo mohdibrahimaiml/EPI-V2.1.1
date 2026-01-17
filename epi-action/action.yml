@@ -30,7 +30,9 @@ runs:
     - name: Install EPI Recorder
       shell: bash
       run: |
-        pip install epi-recorder
+        python -m pip install --upgrade pip
+        python -m pip install epi-recorder
+        python -m pip show epi-recorder
         echo "✅ EPI Recorder installed."
 
     - name: Run and Record
@@ -41,7 +43,7 @@ runs:
       run: |
         echo "📹 Starting EPI Recording for: $EPI_COMMAND"
         # Run epi record wrapping the user command
-        epi record --out "$EPI_OUTPUT" -- $EPI_COMMAND
+        python -m epi_cli.main record --out "$EPI_OUTPUT" -- $EPI_COMMAND
         echo "✅ Recording complete: $EPI_OUTPUT"
 
     - name: Verify Recording
@@ -50,7 +52,7 @@ runs:
         EPI_OUTPUT: ${{ inputs.output }}
       run: |
         # Quick verification check
-        epi verify "$EPI_OUTPUT"
+        python -m epi_cli.main verify "$EPI_OUTPUT"
 
     - name: Upload Evidence
       if: inputs.upload-artifact == 'true'
