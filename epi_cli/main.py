@@ -12,7 +12,9 @@ from epi_cli.keys import generate_default_keypair_if_missing
 # Create Typer app
 app = typer.Typer(
     name="epi",
-    help="""EPI - Evidence Packaged Infrastructure for AI workflows
+    help="""EPI - The PDF for AI Evidence.
+    
+Cryptographic proof of what Autonomous AI Systems actually did.
 
 Commands:
   run    <script.py>        Record, auto-verify and open viewer. (Zero-config)
@@ -119,6 +121,10 @@ app.add_typer(view_app, name="view", help="Open recording in browser (name resol
 # NEW: ls command
 from epi_cli.ls import ls as ls_command
 app.command(name="ls", help="List local recordings (./epi-recordings/)")(ls_command)
+
+# NEW: chat command (v2.1.3 - AI-powered evidence querying)
+from epi_cli.chat import chat as chat_command
+app.command(name="chat", help="Chat with your evidence file using AI")(chat_command)
 
 # Phase 1: keys command (for manual key management)
 @app.command()

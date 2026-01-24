@@ -325,7 +325,113 @@ def _patch_openai_legacy() -> bool:
         return False
 
 
-    return results
+# ==================== Google Gemini Patcher ====================
+
+def patch_gemini() -> bool:
+    """
+    Patch Google Generative AI library to intercept Gemini API calls.
+    
+    Returns:
+        bool: True if patching succeeded, False otherwise
+    """
+    try:
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            import google.generativeai as genai
+            from google.generativeai.types import GenerateContentResponse
+        
+        # Get the GenerativeModel class
+        GenerativeModel = genai.GenerativeModel
+        
+        # Store original method
+        original_generate_content = GenerativeModel.generate_content
+        
+        @wraps(original_generate_content)
+        def wrapped_generate_content(self, *args, **kwargs):
+            """Wrapped Gemini generate_content with recording."""
+            
+            # Only record if context is active
+            if not is_recording():
+                return original_generate_content(self, *args, **kwargs)
+            
+            context = get_recording_context()
+            start_time = time.time()
+            
+            # Extract prompt from args/kwargs
+            contents = args[0] if args else kwargs.get("contents", "")
+            
+            # Capture request
+            request_data = {
+                "provider": "google",
+                "method": "GenerativeModel.generate_content",
+                "model": getattr(self, '_model_name', getattr(self, 'model_name', 'gemini')),
+                "contents": str(contents)[:2000],  # Truncate long prompts
+                "generation_config": str(kwargs.get("generation_config", {})),
+            }
+            
+            # Log request step
+            context.add_step("llm.request", request_data)
+            
+            # Execute original call
+            try:
+                response = original_generate_content(self, *args, **kwargs)
+                elapsed = time.time() - start_time
+                
+                # Capture response
+                response_text = ""
+                try:
+                    if hasattr(response, 'text'):
+                        response_text = response.text[:2000]  # Truncate long responses
+                    elif hasattr(response, 'parts'):
+                        response_text = str(response.parts)[:2000]
+                except Exception:
+                    response_text = "[Response text extraction failed]"
+                
+                response_data = {
+                    "provider": "google",
+                    "model": getattr(self, '_model_name', getattr(self, 'model_name', 'gemini')),
+                    "response": response_text,
+                    "latency_seconds": round(elapsed, 3)
+                }
+                
+                # Try to get usage info if available
+                try:
+                    if hasattr(response, 'usage_metadata'):
+                        usage = response.usage_metadata
+                        response_data["usage"] = {
+                            "prompt_tokens": getattr(usage, 'prompt_token_count', None),
+                            "completion_tokens": getattr(usage, 'candidates_token_count', None),
+                            "total_tokens": getattr(usage, 'total_token_count', None)
+                        }
+                except Exception:
+                    pass
+                
+                # Log response step
+                context.add_step("llm.response", response_data)
+                
+                return response
+            
+            except Exception as e:
+                # Log error step
+                context.add_step("llm.error", {
+                    "provider": "google",
+                    "error": str(e),
+                    "error_type": type(e).__name__
+                })
+                raise
+        
+        # Apply patch
+        GenerativeModel.generate_content = wrapped_generate_content
+        
+        return True
+    
+    except ImportError:
+        # google-generativeai not installed
+        return False
+    except Exception as e:
+        print(f"Warning: Failed to patch Gemini: {e}")
+        return False
 
 
 def patch_requests() -> bool:
@@ -418,6 +524,9 @@ def patch_all() -> Dict[str, bool]:
     
     # Patch OpenAI
     results["openai"] = patch_openai()
+    
+    # Patch Google Gemini
+    results["gemini"] = patch_gemini()
     
     # Patch generic requests (covers LangChain, Anthropic, etc.)
     results["requests"] = patch_requests()

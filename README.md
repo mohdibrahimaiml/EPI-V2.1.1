@@ -4,9 +4,9 @@
 
 # EPI Recorder
 
-### The PDF for AI Evidence™
+### The PDF for AI Evidence
 
-**Record. Verify. Trust.**
+**Cryptographic proof of what Autonomous AI Systems actually did.**
 
 [![PyPI](https://img.shields.io/pypi/v/epi-recorder?color=blue&label=PyPI&logo=pypi&logoColor=white)](https://pypi.org/project/epi-recorder/)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://www.python.org)
@@ -15,7 +15,7 @@
 [![Downloads](https://img.shields.io/pypi/dm/epi-recorder?color=blue&label=Downloads)](https://pypi.org/project/epi-recorder/)
 [![Stars](https://img.shields.io/github/stars/mohdibrahimaiml/EPI-V2.0.0?style=social)](https://github.com/mohdibrahimaiml/EPI-V2.0.0)
 
-[**🚀 Quick Start**](#-quick-start-30-seconds) • [**📖 Docs**](https://epilabs.org/docs) • [**💬 Community**](https://github.com/mohdibrahimaiml/EPI-V2.0.0/discussions) • [**🎥 Demo**](https://colab.research.google.com/github/mohdibrahimaiml/EPI-V2.1.2/blob/main/colab_demo.ipynb)
+[**🚀 Quick Start**](#-quick-start-30-seconds) • [**📖 Docs**](https://epilabs.org/docs) • [**💬 Community**](https://github.com/mohdibrahimaiml/EPI-V2.1.3/discussions) • [**🎥 Demo**](https://colab.research.google.com/github/mohdibrahimaiml/EPI-V2.1.3/blob/main/colab_demo.ipynb)
 
 </div>
 
@@ -34,12 +34,12 @@
 
 **Unix/Mac:**
 ```bash
-curl -sSL https://raw.githubusercontent.com/mohdibrahimaiml/EPI-V2.1.2/main/scripts/install.sh | sh
+curl -sSL https://raw.githubusercontent.com/mohdibrahimaiml/EPI-V2.1.3/main/scripts/install.sh | sh
 ```
 
 **Windows:**
 ```powershell
-iwr https://raw.githubusercontent.com/mohdibrahimaiml/EPI-V2.1.2/main/scripts/install.ps1 -useb | iex
+iwr https://raw.githubusercontent.com/mohdibrahimaiml/EPI-V2.1.3/main/scripts/install.ps1 -useb | iex
 ```
 
 **Manual (pip):**
@@ -437,21 +437,23 @@ Use `python -m epi_cli` instead (always works). Or run `python -m epi_cli doctor
 
 ---
 
-## 🆕 What's New in v2.1.2
+## 🆕 What's New in v2.1.3
 
 > [!IMPORTANT]
-> **Critical Security Update:** Implemented client-side Ed25519 signature verification in the embedded viewer. The viewer now cryptographically verifies that the standard signature matches the content and the embedded public key, preventing potential tamper attacks.
+> **Gemini Native:** EPI now natively supports Google Gemini. Just run your script, and Gemini calls are captured automatically. Plus, talk to your evidence with `epi chat`.
 
-### 🛡️ Security & Integrity
+### 🤖 Gemini Integration
+- **Automatic Patcher:** Intercepts `google.generativeai` calls without code changes. Logs prompts, responses, and token usage.
+- **Evidence Chat:** New command `epi chat` allows you to query your `.epi` files using Gemini AI. "What happened in this run?"
+- **Error Capture:** Automatically records API errors like Quota Exceeded (429) or Blocked Content.
+
+### 🛡️ Security & Integrity (v2.1.2)
 - **Client-Side Verification:** The HTML viewer now includes a bundled crypto library to verify signatures offline.
-- **Spec Update (v1.1-json):** Manifests now use Canonical JSON hashing and include the `public_key` for self-contained proof.
 - **Trust Badges:** UI now explicitly shows "Verified" (Green), "Unsigned" (Yellow), or "Tampered" (Red).
 
-### ✨ Enhanced CLI Reliability (v2.1.1)
-
-**1. Python Module Fallback**
-- `python -m epi_cli` now works as a 100% reliable alternative
-- Perfect for restricted environments
+### ✨ Enhanced CLI Reliability
+- **Windows Compatibility:** Fixed Unicode issues in CLI for legacy terminals.
+- **Python Module Fallback:** `python -m epi_cli` works reliably everywhere.
 
 **2. Automatic PATH Configuration**
 - Post-install script auto-fixes PATH on Windows

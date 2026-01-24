@@ -5,6 +5,32 @@ All notable changes to EPI Recorder will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.3] - 2026-01-24
+
+### Added
+- **Google Gemini Support**: Automatic interception of Gemini API calls via `patch_gemini()`
+- **`epi chat` command**: Interactive AI-powered querying of evidence files using natural language
+- **google-generativeai dependency**: Gemini AI features work out of the box
+
+### Changed
+- Updated `patch_all()` to include Gemini alongside OpenAI
+- Added 'gemini' to package keywords
+
+### Fixed
+- **Windows Compatibility**: Replaced Unicode emojis in CLI output with ASCII to prevent crashes on legacy terminals
+- **Error Handling**: Improved API error reporting (e.g., Quota Exceeded) with user-friendly UI panels
+- **Deprecation Warnings**: Suppressed `FutureWarning` spam from google-generativeai SDK
+
+## [2.1.2] - 2025-01-17
+
+### Security
+- **Client-Side Verification**: Embedded HTML viewer now verifies Ed25519 signatures offline using JS
+- **Manifest V1.1**: Canonical JSON hashing and public key inclusion
+
+### Changed
+- Updated trust badges in Viewer UI
+- Spec version bump to 1.1-json
+
 ## [2.1.1] - 2025-12-16
 
 ### Added

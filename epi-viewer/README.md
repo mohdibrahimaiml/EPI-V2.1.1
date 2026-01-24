@@ -88,7 +88,7 @@ The viewer follows a strict **verify-before-render** security model:
 ### Status Banner (Always Visible)
 
 ```
-✓ VERIFIED | Ed25519 | 2026-01-14T09:22:33Z | EPI 2.1.2
+✓ VERIFIED | Ed25519 | 2026-01-24T12:00:00Z | EPI 2.1.3
 ```
 
 This banner stays visible at all times and cannot be hidden.
