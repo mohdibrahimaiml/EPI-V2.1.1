@@ -15,7 +15,7 @@ from pathlib import Path
 def run_command(cmd, description, check=True):
     """Run a command and report results."""
     print(f"\n{'='*60}")
-    print(f"🧪 {description}")
+    print(f"[TEST] {description}")
     print(f"{'='*60}")
     print(f"Command: {cmd}")
     print()
@@ -24,7 +24,9 @@ def run_command(cmd, description, check=True):
         cmd,
         shell=True,
         capture_output=True,
-        text=True
+        text=True,
+        encoding='utf-8',
+        errors='replace'
     )
     
     print(result.stdout)
@@ -32,10 +34,10 @@ def run_command(cmd, description, check=True):
         print("STDERR:", result.stderr)
     
     if check and result.returncode != 0:
-        print(f"❌ FAILED with exit code {result.returncode}")
+        print(f"[FAIL] Command failed with exit code {result.returncode}")
         return False
     else:
-        print(f"✅ SUCCESS")
+        print(f"[OK] SUCCESS")
         return True
 
 
@@ -43,7 +45,7 @@ def test_workflow():
     """Test complete user workflow."""
     
     print("\n" + "="*60)
-    print("🎯 TESTING COMPLETE USER WORKFLOW")
+    print("[TESTING] COMPLETE USER WORKFLOW")
     print("="*60)
     print("\nThis simulates how a real user would use EPI Recorder")
     print("after installing via pip.\n")
@@ -51,7 +53,7 @@ def test_workflow():
     # Create temporary working directory
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
-        print(f"\n📁 Working directory: {tmpdir}\n")
+        print(f"\n[WORKSPACE] Working directory: {tmpdir}\n")
         
         # Test 1: Check package is installed
         if not run_command(
@@ -91,10 +93,10 @@ def calculate_stats(numbers):
 data = [10, 20, 30, 40, 50]
 stats = calculate_stats(data)
 print(f"Statistics: {stats}")
-print("✓ Workflow completed successfully!")
+print("[OK] Workflow completed successfully!")
 """)
         
-        print(f"\n📝 Created user script: {user_script}")
+        print(f"\n[CREATE] Created user script: {user_script}")
         
         # Test 5: Record using Python API (most common usage)
         api_test_script = tmpdir / "use_api.py"
@@ -111,7 +113,7 @@ with record(str(output_file), workflow_name="My Workflow"):
     result = sum(data)
     print(f"Result: {{result}}")
 
-print(f"✓ API recording complete: {{output_file}}")
+print(f"[OK] API recording complete: {{output_file}}")
 """)
         
         if not run_command(
@@ -123,7 +125,7 @@ print(f"✓ API recording complete: {{output_file}}")
         # Test 6: Verify the API-created file
         api_epi_file = tmpdir / "workflow_api.epi"
         if not api_epi_file.exists():
-            print(f"❌ Expected file not found: {api_epi_file}")
+            print(f"[FAIL] Expected file not found: {api_epi_file}")
             return False
         
         if not run_command(
@@ -142,7 +144,7 @@ print(f"✓ API recording complete: {{output_file}}")
         
         # Test 8: Verify CLI-created file
         if not cli_epi_file.exists():
-            print(f"❌ Expected file not found: {cli_epi_file}")
+            print(f"[FAIL] Expected file not found: {cli_epi_file}")
             return False
         
         if not run_command(
@@ -173,7 +175,7 @@ with record(str(output_file), workflow_name="OpenAI Workflow"):
     print("Calling OpenAI API (mocked)...")
     print("Response received:", mock_response.choices[0].message.content)
 
-print(f"✓ OpenAI workflow recorded: {{output_file}}")
+print(f"[OK] OpenAI workflow recorded: {{output_file}}")
 """)
         
         if not run_command(
@@ -201,7 +203,7 @@ with record(str(output_file), workflow_name="Custom", tags=["v1.0", "test"]) as 
     # Log results
     epi.log_step("calculation.complete", {{"result": result}})
 
-print(f"✓ Custom workflow recorded: {{output_file}}")
+print(f"[OK] Custom workflow recorded: {{output_file}}")
 """)
         
         if not run_command(
@@ -212,12 +214,12 @@ print(f"✓ Custom workflow recorded: {{output_file}}")
         
         # Test 11: Verify all created files
         epi_files = list(tmpdir.glob("*.epi"))
-        print(f"\n\n📦 Created {len(epi_files)} .epi files:")
+        print(f"\n\n[FILES] Created {len(epi_files)} .epi files:")
         for f in epi_files:
-            print(f"   • {f.name} ({f.stat().st_size} bytes)")
+            print(f"   - {f.name} ({f.stat().st_size} bytes)")
         
         if len(epi_files) < 4:
-            print(f"❌ Expected at least 4 .epi files, found {len(epi_files)}")
+            print(f"[FAIL] Expected at least 4 .epi files, found {len(epi_files)}")
             return False
         
         # Test 12: Verify each file
@@ -230,10 +232,10 @@ print(f"✓ Custom workflow recorded: {{output_file}}")
                 text=True
             )
             if result.returncode != 0:
-                print(f"❌ Verification failed for {epi_file.name}")
+                print(f"[FAIL] Verification failed for {epi_file.name}")
                 all_verified = False
             else:
-                print(f"✅ {epi_file.name} verified")
+                print(f"[OK] {epi_file.name} verified")
         
         if not all_verified:
             return False
@@ -258,9 +260,9 @@ except ValueError as e:
 
 # Check file was created despite error
 if Path(output_file).exists():
-    print(f"✓ Error workflow recorded: {{output_file}}")
+    print(f"[OK] Error workflow recorded: {{output_file}}")
 else:
-    print("❌ File was not saved after error!")
+    print("[FAIL] File was not saved after error!")
     exit(1)
 """)
         
@@ -271,20 +273,20 @@ else:
             return False
         
         print("\n\n" + "="*60)
-        print("✅ ALL USER WORKFLOW TESTS PASSED!")
+        print("[SUCCESS] ALL USER WORKFLOW TESTS PASSED!")
         print("="*60)
-        print("\n📊 Test Summary:")
-        print("  ✅ Package import")
-        print("  ✅ CLI accessibility")
-        print("  ✅ Signing keys")
-        print("  ✅ Python API recording")
-        print("  ✅ CLI recording")
-        print("  ✅ File verification")
-        print("  ✅ OpenAI-like workflow")
-        print("  ✅ Custom logging")
-        print("  ✅ Error handling")
-        print(f"  ✅ {len(epi_files)} .epi files created and verified")
-        print("\n🎉 The package is ready for real users!")
+        print("\n[SUMMARY] Test Summary:")
+        print("  [OK] Package import")
+        print("  [OK] CLI accessibility")
+        print("  [OK] Signing keys")
+        print("  [OK] Python API recording")
+        print("  [OK] CLI recording")
+        print("  [OK] File verification")
+        print("  [OK] OpenAI-like workflow")
+        print("  [OK] Custom logging")
+        print("  [OK] Error handling")
+        print(f"  [OK] {len(epi_files)} .epi files created and verified")
+        print("\n[READY] The package is ready for real users!")
         
         return True
 
