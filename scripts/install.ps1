@@ -23,7 +23,8 @@ foreach ($cmd in @("python", "python3", "py")) {
             Write-Host "$version" -ForegroundColor Cyan
             break
         }
-    } catch {
+    }
+    catch {
         continue
     }
 }
@@ -41,7 +42,8 @@ Write-Host "→ Installing EPI Recorder..." -ForegroundColor Blue
 try {
     & $PythonCommand -m pip install --user --upgrade epi-recorder --quiet
     Write-Host "✓ EPI Recorder installed" -ForegroundColor Green
-} catch {
+}
+catch {
     Write-Host "✗ Installation failed: $_" -ForegroundColor Red
     exit 1
 }
@@ -66,7 +68,8 @@ $CurrentPath = [Environment]::GetEnvironmentVariable("Path", "User")
 # Check if already in PATH
 if ($CurrentPath -like "*$ScriptsDir*") {
     Write-Host "✓ PATH already configured" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "→ Adding to PATH..." -ForegroundColor Blue
     
     try {
@@ -78,7 +81,8 @@ if ($CurrentPath -like "*$ScriptsDir*") {
         $env:Path += ";$ScriptsDir"
         
         Write-Host "✓ PATH updated successfully" -ForegroundColor Green
-    } catch {
+    }
+    catch {
         Write-Host "⚠ Could not update PATH automatically: $_" -ForegroundColor Yellow
         Write-Host ""
         Write-Host "Manual fix:" -ForegroundColor Yellow
@@ -100,7 +104,8 @@ try {
     if ($LASTEXITCODE -eq 0 -or $TestResult -match "EPI|version") {
         $EpiWorks = $true
     }
-} catch {
+}
+catch {
     # Command not found
 }
 
@@ -118,7 +123,8 @@ if ($EpiWorks) {
     Write-Host "  epi run script.py " -NoNewline -ForegroundColor Green
     Write-Host "# Record your first script"
     Write-Host ""
-} else {
+}
+else {
     Write-Host "⚠ EPI installed but command not immediately available" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "Next Steps:" -ForegroundColor Blue
@@ -133,7 +139,7 @@ if ($EpiWorks) {
 }
 
 Write-Host "Documentation: " -NoNewline
-Write-Host "https://github.com/mohdibrahimaiml/EPI-V2.1.3" -ForegroundColor Cyan
+Write-Host "https://github.com/mohdibrahimaiml/EPI-V2.2.0" -ForegroundColor Cyan
 Write-Host "Issues: " -NoNewline
-Write-Host "https://github.com/mohdibrahimaiml/EPI-V2.1.3/issues" -ForegroundColor Cyan
+Write-Host "https://github.com/mohdibrahimaiml/EPI-V2.2.0/issues" -ForegroundColor Cyan
 Write-Host ""

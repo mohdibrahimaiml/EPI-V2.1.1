@@ -1,165 +1,147 @@
-"""
-Async API for EPI Recording.
-
-Provides async/await compatible recording for modern agent frameworks
-like LangChain, CrewAI, and AutoGPT that use asyncio.
-"""
-
 import asyncio
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Dict, Any, Optional
-from pathlib import Path
+from typing import Optional, Dict, Any
+from datetime import datetime
 
-from epi_recorder.patcher import (
-    RecordingContext,
-    set_recording_context,
-    get_recording_context,
-    patch_all
-)
-
+from epi_core.storage import EpiStorage
+from epi_core.schemas import StepModel
 
 class AsyncRecorder:
-    """Async-native recorder for modern agent frameworks."""
+    """
+    Async-native recorder that doesn't block the event loop.
+    Uses background thread for SQLite writes.
+    """
     
-    def __init__(self, output_dir: Path, enable_redaction: bool = True):
-        """
-        Initialize async recorder.
+    def __init__(self, session_name: str, output_dir: str = "."):
+        self.session_name = session_name
+        self.output_dir = output_dir
         
-        Args:
-            output_dir: Directory for recording output
-            enable_redaction: Whether to enable secret redaction
-        """
-        self.output_dir = Path(output_dir)
-        self.enable_redaction = enable_redaction
-        self.context: Optional[RecordingContext] = None
-        self._token: Optional[Any] = None
-        self._step_queue: Optional[asyncio.Queue] = None
-        self._worker_task: Optional[asyncio.Task] = None
+        # Thread-safe queue for steps
+        self._queue = asyncio.Queue()
+        
+        # Background thread executor (1 thread is enough for SQLite)
+        self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="epi_writer")
+        
+        # Storage instance (created in background thread)
+        self._storage: Optional[EpiStorage] = None
+        self._writer_task: Optional[asyncio.Task] = None
+        
+        # State tracking
+        self._step_count = 0
+        self._done = asyncio.Event()
+        self._error: Optional[Exception] = None
     
-    async def start(self) -> None:
-        """Start async recording session."""
-        # Create recording context
-        self.context = RecordingContext(
-            output_dir=self.output_dir,
-            enable_redaction=self.enable_redaction
+    async def start(self):
+        """Initialize storage in background thread and start writer"""
+        # Create storage in thread (SQLite init is also blocking)
+        loop = asyncio.get_event_loop()
+        self._storage = await loop.run_in_executor(
+            self._executor,
+            lambda: EpiStorage(self.session_name, self.output_dir)
         )
         
-        # Set context (thread-safe)
-        self._token = set_recording_context(self.context)
-        
-        # Activate monkey patches
-        patch_all()
-        
-        # Initialize async step queue for non-blocking writes
-        self._step_queue = asyncio.Queue()
-        self._worker_task = asyncio.create_task(self._flush_worker())
+        # Start background writer task
+        self._writer_task = asyncio.create_task(self._writer_loop())
     
-    async def _flush_worker(self) -> None:
-        """Background task to flush queued steps."""
-        while True:
-            try:
-                # Check if we should exit
-                step = await asyncio.wait_for(
-                    self._step_queue.get(),
-                    timeout=0.1
+    async def record_step(self, step_type: str, content: dict):
+        """Non-blocking step recording"""
+        if self._error:
+            raise self._error
+        
+        self._step_count += 1
+        
+        # Put in queue (never blocks, just buffers in memory)
+        await self._queue.put({
+            'index': self._step_count,
+            'type': step_type,
+            'content': content,
+            'timestamp': datetime.utcnow() # StepModel expects datetime
+        })
+    
+    async def _writer_loop(self):
+        """Background task: Drains queue to SQLite"""
+        try:
+            while True:
+                # Wait for item with timeout to check for shutdown
+                try:
+                    step_data = await asyncio.wait_for(self._queue.get(), timeout=0.5)
+                except asyncio.TimeoutError:
+                    continue
+                
+                if step_data is None: # Shutdown sentinel
+                   self._queue.task_done()
+                   break
+
+                # Write to SQLite in background thread (non-blocking for async)
+                loop = asyncio.get_event_loop()
+                await loop.run_in_executor(
+                    self._executor,
+                    self._write_to_storage,
+                    step_data
                 )
                 
-                if step is None:  # Shutdown signal
-                    break
+                self._queue.task_done()
                 
-                # Process step (this would be custom async step handling)
-                # For now, the RecordingContext handles steps synchronously
-                
-                self._step_queue.task_done()
-                
-            except asyncio.TimeoutError:
-                continue
-            except Exception as e:
-                print(f"Error in flush worker: {e}")
+        except asyncio.CancelledError:
+            # Graceful shutdown
+            pass
+        except Exception as e:
+            self._error = e
     
-    async def stop(self) -> Path:
-        """
-        Stop recording and finalize.
+    def _write_to_storage(self, step_data: dict):
+        """Synchronous SQLite write (runs in background thread)"""
+        if self._storage:
+            # Construct StepModel
+            step = StepModel(
+                index=step_data['index'],
+                timestamp=step_data['timestamp'],
+                kind=step_data['type'],
+                content=step_data['content']
+            )
+            self._storage.add_step(step)
+    
+    async def stop(self):
+        """Finalize: Drain queue, close storage"""
+        if not self._writer_task:
+            return
         
-        Returns:
-            Path to finalized recording
-        """
-        # Signal worker to stop
-        if self._step_queue:
-            await self._step_queue.put(None)
-            await self._step_queue.join()
+        # Signal writer to finish
+        await self._queue.put(None)
+        await self._queue.join()
         
-        if self._worker_task:
-            try:
-                await asyncio.wait_for(self._worker_task, timeout=1.0)
-            except asyncio.TimeoutError:
-                self._worker_task.cancel()
-                try:
-                    await self._worker_task
-                except asyncio.CancelledError:
-                    pass
+        # Wait for task
+        self._writer_task.cancel()
+        try:
+            await self._writer_task
+        except asyncio.CancelledError:
+            pass
         
-        # Finalize storage
-        if self.context and self.context.storage:
-            final_path = self.context.storage.finalize()
-        else:
-            final_path = self.output_dir / "steps.jsonl"
+        # Finalize storage in background thread
+        if self._storage:
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(
+                self._executor,
+                self._storage.finalize
+            )
         
-        # Clear context
-        if self._token:
-            set_recording_context(None)
-        
-        return final_path
-
+        # Shutdown executor
+        self._executor.shutdown(wait=True)
 
 @asynccontextmanager
-async def record_async(
-    output_dir: Path,
-    enable_redaction: bool = True
-) -> AsyncGenerator[AsyncRecorder, None]:
+async def record_async(session_name: str, output_dir: str = "."):
     """
-    Async context manager for recording agent execution.
+    Async context manager for recording.
     
     Usage:
-        async with record_async(Path("./recording")) as recorder:
-            await agent.arun("task")
-    
-    Args:
-        output_dir: Directory for recording output
-        enable_redaction: Whether to enable secret redaction
-        
-    Yields:
-        AsyncRecorder instance
+        async with record_async("my_agent") as rec:
+            await agent.arun("task")  # Non-blocking
     """
-    recorder = AsyncRecorder(output_dir, enable_redaction)
+    recorder = AsyncRecorder(session_name, output_dir)
     await recorder.start()
     try:
         yield recorder
     finally:
         await recorder.stop()
-
-
-# Convenience function for simple async recording
-async def record_async_simple(output_dir: Path, func, *args, **kwargs):
-    """
-    Record an async function execution.
-    
-    Usage:
-        result = await record_async_simple(
-            Path("./recording"),
-            my_async_agent_function,
-            arg1, arg2, kwarg1=value1
-        )
-    
-    Args:
-        output_dir: Directory for recording output
-        func: Async function to record
-        *args: Positional arguments for func
-        **kwargs: Keyword arguments for func
-        
-    Returns:
-        Result of func execution
-    """
-    async with record_async(output_dir) as recorder:
-        result = await func(*args, **kwargs)
-        return result

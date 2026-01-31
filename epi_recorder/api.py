@@ -360,7 +360,24 @@ class EpiRecorderSession:
                     encoding="utf-8"
                 )
                 
-                # Repack the ZIP with signed manifest
+                # Regenerate viewer.html with signed manifest
+                steps = []
+                steps_file = tmp_path / "steps.jsonl"
+                if steps_file.exists():
+                    for line in steps_file.read_text(encoding="utf-8").strip().split("\n"):
+                        if line:
+                            try:
+                                steps.append(json.loads(line))
+                            except json.JSONDecodeError:
+                                pass
+                
+                # Regenerate viewer with signed manifest
+                from epi_core.container import EPIContainer
+                viewer_html = EPIContainer._create_embedded_viewer(tmp_path, signed_manifest)
+                viewer_path = tmp_path / "viewer.html"
+                viewer_path.write_text(viewer_html, encoding="utf-8")
+                
+                # Repack the ZIP with signed manifest and updated viewer
                 # CRITICAL: Write to temp file first to prevent data loss
                 temp_output = self.output_path.with_suffix('.epi.tmp')
                 

@@ -323,7 +323,7 @@ def run(
         km = KeyManager()
         priv = km.load_private_key("default")
         
-        # Read manifest from ZIP
+        # Extract, sign, and repack with new viewer
         import json as _json
         with zipfile.ZipFile(out, "r") as zf:
             raw = zf.read("manifest.json").decode("utf-8")
@@ -336,14 +336,18 @@ def run(
         sm = _sign(m, priv, "default")
         signed_json = sm.model_dump_json(indent=2)
         
-        # Replace manifest in ZIP
+        # Regenerate viewer.html with signed manifest and steps
+        viewer_html = EPIContainer._create_embedded_viewer(temp_workspace, sm)
+        
+        # Replace manifest AND viewer in ZIP
         temp_zip = out.with_suffix(".epi.tmp")
         with zipfile.ZipFile(out, "r") as zf_in:
             with zipfile.ZipFile(temp_zip, "w", zipfile.ZIP_DEFLATED) as zf_out:
                 for item in zf_in.namelist():
-                    if item != "manifest.json":
+                    if item not in ("manifest.json", "viewer.html"):
                         zf_out.writestr(item, zf_in.read(item))
                 zf_out.writestr("manifest.json", signed_json)
+                zf_out.writestr("viewer.html", viewer_html)
         
         temp_zip.replace(out)
         signed = True

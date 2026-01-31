@@ -33,7 +33,33 @@ class MistakeDetector:
         self.mistakes: List[Dict] = []
     
     def _load_steps(self) -> List[Dict]:
-        """Load steps from EPI file (SQLite or JSONL)"""
+        """Load steps from EPI file (ZIP, SQLite, or JSONL)"""
+        import tempfile
+        import zipfile
+        
+        # If it's a ZIP file (.epi), unpack it first
+        if self.epi_path.is_file() and self.epi_path.suffix == '.epi':
+            try:
+                # Check if it's a valid ZIP
+                if zipfile.is_zipfile(self.epi_path):
+                    temp_dir = Path(tempfile.mkdtemp())
+                    with zipfile.ZipFile(self.epi_path, 'r') as zf:
+                        zf.extractall(temp_dir)
+                    
+                    # Look for steps.jsonl in extracted content
+                    steps_file = temp_dir / "steps.jsonl"
+                    if steps_file.exists():
+                        return self._load_from_jsonl(steps_file)
+                    
+                    # Also check for SQLite db
+                    for db_file in temp_dir.glob("*.db"):
+                        try:
+                            return self._load_from_sqlite(db_file)
+                        except Exception:
+                            continue
+            except Exception:
+                pass  # Fall through to other methods
+        
         # Try loading from steps.jsonl in directory
         if self.epi_path.is_dir():
             jsonl_path = self.epi_path / "steps.jsonl"
@@ -274,7 +300,7 @@ class MistakeDetector:
     def get_summary(self) -> str:
         """Human-readable summary of detected mistakes"""
         if not self.mistakes:
-            return "✅ No obvious mistakes detected"
+            return "[OK] No obvious mistakes detected"
         
         # Count by severity
         critical = sum(1 for m in self.mistakes if m.get('severity') == 'CRITICAL')
@@ -283,24 +309,26 @@ class MistakeDetector:
         low = sum(1 for m in self.mistakes if m.get('severity') == 'LOW')
         
         lines = [
-            f"🐛 Found {len(self.mistakes)} issue(s):",
+            f"[!] Found {len(self.mistakes)} issue(s):",
             f"   {critical} Critical, {high} High, {medium} Medium, {low} Low severity",
             ""
         ]
         
         # Show details for each mistake
         for i, m in enumerate(self.mistakes, 1):
-            severity_emoji = {
-                'CRITICAL': '🔴',
-                'HIGH': '🟠',
-                'MEDIUM': '🟡',
-                'LOW': '🟢'
-            }.get(m.get('severity', 'LOW'), '⚪')
+            severity_marker = {
+                'CRITICAL': '[!!!]',
+                'HIGH': '[!!]',
+                'MEDIUM': '[!]',
+                'LOW': '[-]'
+            }.get(m.get('severity', 'LOW'), '[?]')
             
-            lines.append(f"{i}. {severity_emoji} [{m.get('severity')}] {m.get('type')} at Step {m.get('step')}")
-            lines.append(f"   └─ {m.get('explanation')}")
+            lines.append(f"{i}. {severity_marker} [{m.get('severity')}] {m.get('type')} at Step {m.get('step')}")
+            lines.append(f"   -> {m.get('explanation')}")
             if 'fix' in m:
-                lines.append(f"   └─ Fix: {m['fix']}")
+                lines.append(f"   -> Fix: {m['fix']}")
             lines.append("")
+        
+        return '\n'.join(lines)
         
         return '\n'.join(lines)

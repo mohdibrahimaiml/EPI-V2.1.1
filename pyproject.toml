@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "epi-recorder"
 version = "2.2.0"
-description = "Debug AI agents with execution tracing. Black box recorder for LangChain, CrewAI, and autonomous agents."
+description = "The Flight Recorder for AI Agents. Debug LangChain & CrewAI with execution tracing."
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.11"
 license = {text = "MIT"}
@@ -15,7 +15,20 @@ authors = [
 maintainers = [
     {name = "Mohd Ibrahim Afridi", email = "mohdibrahim@epilabs.org"}
 ]
-keywords = ["ai", "debugging", "agents", "langchain", "crewai", "observability", "llm", "openai", "gemini", "tracing"]
+keywords = [
+    "ai", 
+    "debugging", 
+    "agents", 
+    "langchain", 
+    "crewai", 
+    "devtools",
+    "observability", 
+    "llm", 
+    "openai", 
+    "gemini", 
+    "tracing",
+    "flight-recorder"
+]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -27,6 +40,10 @@ classifiers = [
     "Topic :: Software Development :: Debuggers",
     "Topic :: Software Development :: Testing",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: System :: Logging",
+    "Typing :: Typed",
+    "Framework :: Pydantic",
+    "Framework :: Pydantic :: 2"
 ]
 
 dependencies = [
@@ -53,9 +70,9 @@ epi = "epi_cli.main:app"
 [project.urls]
 Homepage = "https://epilabs.org"
 Documentation = "https://epilabs.org/docs"
-Repository = "https://github.com/epilabs/epi-recorder"
-Issues = "https://github.com/epilabs/epi-recorder/issues"
-Discussions = "https://github.com/epilabs/epi-recorder/discussions"
+Repository = "https://github.com/mohdibrahimaiml/EPI-V2.1.2"
+Issues = "https://github.com/mohdibrahimaiml/EPI-V2.1.2/issues"
+Discussions = "https://github.com/mohdibrahimaiml/EPI-V2.1.2/discussions"
 
 [tool.setuptools.packages.find]
 where = ["."]

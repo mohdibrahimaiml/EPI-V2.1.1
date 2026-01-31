@@ -93,10 +93,10 @@ def debug(
         console.print("\nAnalysis complete")
         
     except FileNotFoundError as e:
-        console.print(f"[red]ERROR: File not found:[/red] {e}", err=True)
+        console.print(f"[red]ERROR: File not found:[/red] {e}")
         raise typer.Exit(code=2)
     except Exception as e:
-        console.print(f"[red]ERROR analyzing file:[/red] {e}", err=True)
+        console.print(f"[red]ERROR analyzing file:[/red] {e}")
         if verbose:
             import traceback
             console.print(traceback.format_exc())

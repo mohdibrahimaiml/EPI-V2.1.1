@@ -37,18 +37,20 @@ async function renderTrustBadge(manifest) {
     `;
 
     // Check verification logic availability
+    const hasSignature = manifest.signature && manifest.signature !== "null" && manifest.signature.trim() !== "";
+
     if (typeof window.verifyManifestSignature !== 'function') {
-        renderBadgeResult(false, 'Missing crypto lib', manifest.signature != null);
+        renderBadgeResult(false, 'Missing crypto lib', hasSignature);
         return;
     }
 
     try {
         const result = await window.verifyManifestSignature(manifest);
         console.log("Verification Result:", result);
-        renderBadgeResult(result.valid, result.reason, manifest.signature != null);
+        renderBadgeResult(result.valid, result.reason, hasSignature);
     } catch (e) {
         console.error("Verification error:", e);
-        renderBadgeResult(false, e.message, manifest.signature != null);
+        renderBadgeResult(false, e.message, hasSignature);
     }
 }
 
@@ -211,7 +213,12 @@ function renderStep(step) {
             </span>
             <span class="text-sm font-medium text-gray-900">${kind}</span>
         </div>
-        <span class="text-xs text-gray-500">${time}</span>
+        <div class="flex items-center space-x-2">
+            <span class="text-xs text-gray-500">${time}</span>
+            <button onclick='copyStepData(${JSON.stringify(JSON.stringify(content))})' class="text-gray-400 hover:text-blue-600 transition-colors" title="Copy Raw JSON">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+            </button>
+        </div>
     `;
     wrapper.appendChild(header);
 
@@ -283,7 +290,7 @@ function renderLLMResponse(content) {
             html += `
                 <div class="chat-bubble mr-auto bg-green-100 text-green-900 rounded-lg px-4 py-2 text-sm">
                     <div class="text-xs font-medium mb-1 uppercase">Assistant</div>
-                    <div class="whitespace-pre-wrap">${escapeHTML(choice.message.content)}</div>
+                    <div class="whitespace-pre-wrap">${formatMessageContent(choice.message.content)}</div>
                     ${choice.finish_reason ? `<div class="text-xs text-green-700 mt-2">• ${choice.finish_reason}</div>` : ''}
                 </div>
             `;
@@ -296,7 +303,7 @@ function renderLLMResponse(content) {
         html += `
             <div class="mt-3 text-xs text-gray-600 flex items-center space-x-4">
                 <span>📊 ${content.usage.total_tokens} tokens</span>
-                <span>⚡ ${content.latency_seconds}s</span>
+                ${content.latency_seconds ? `<span>⚡ ${content.latency_seconds}s</span>` : ''}
             </div>
         `;
     }
@@ -347,6 +354,28 @@ function renderTimeline(steps) {
         timeline.appendChild(renderStep(step));
     }
 }
+
+// Helper: Format message content with bolding
+function formatMessageContent(text) {
+    if (!text) return '';
+    // Escape HTML first
+    let escaped = escapeHTML(text);
+    // Apply bold formatting for **text**
+    return escaped.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+}
+
+// Helper: Copy to clipboard
+window.copyStepData = function (dataStr) {
+    try {
+        const data = JSON.parse(dataStr); // It was doubly stringified
+        navigator.clipboard.writeText(JSON.stringify(data, null, 2)).then(() => {
+            // Visual feedback could be added here
+            console.log('Copied to clipboard');
+        });
+    } catch (e) {
+        console.error('Copy failed', e);
+    }
+};
 
 // Initialize viewer
 async function init() {

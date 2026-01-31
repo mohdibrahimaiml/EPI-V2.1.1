@@ -45,6 +45,7 @@ def load_steps_from_epi(epi_path: Path) -> list:
 
 def chat(
     epi_file: Path = typer.Argument(..., help="Path to .epi file to chat with"),
+    query: str = typer.Option(None, "--query", "-q", help="Single question (non-interactive mode)"),
     model: str = typer.Option("gemini-2.0-flash", "--model", "-m", help="Gemini model to use")
 ):
     """
@@ -52,8 +53,9 @@ def chat(
     
     Ask natural language questions about what happened in your recording.
     
-    Example:
-        epi chat my_recording.epi
+    Examples:
+        epi chat my_recording.epi                    # Interactive mode
+        epi chat my_recording.epi -q "What happened?"  # Single question
     """
     # Resolve path
     if not epi_file.exists():
@@ -150,7 +152,19 @@ When answering questions:
     ))
     console.print()
     
-    # Chat loop
+    # Non-interactive mode: answer single question and exit
+    if query:
+        try:
+            full_prompt = f"{context}\n\nUser question: {query}"
+            response = chat_session.send_message(full_prompt)
+            console.print("[bold green]AI:[/bold green]")
+            console.print(Markdown(response.text))
+            return
+        except Exception as e:
+            console.print(f"[red]Error:[/red] {e}")
+            raise typer.Exit(1)
+    
+    # Interactive chat loop
     while True:
         try:
             question = Prompt.ask("[bold cyan]You[/bold cyan]")
