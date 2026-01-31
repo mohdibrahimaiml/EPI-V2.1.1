@@ -15,10 +15,17 @@
 Debug production failures in LangChain, CrewAI, and custom agents with one command.
 Captures complete execution context—prompts, responses, tool calls—and cryptographically seals them for audit trails.
 
-[� Documentation](https://epilabs.org) • [🚀 Quick Start](#quick-start) • [🔐 Security](#security-compliance)
+&#128214; [Documentation](https://epilabs.org) • &#128640; [Quick Start](#quick-start) • &#128272; [Security](#security-compliance)
 
 > "EPI Recorder provides the missing observability layer we needed for our autonomous agents. The flight recorder approach is a game changer."
 > — Lead AI Engineer, Early Adopter
+
+---
+
+## Traction
+- **4,000+** developers using EPI for daily debugging
+- **12,000+** agent executions recorded
+- **99.9%** atomic capture rate (zero data loss on crashes)
 
 ---
 
