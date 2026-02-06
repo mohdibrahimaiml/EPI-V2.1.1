@@ -195,78 +195,23 @@ This release corrects EPI's evidence capture model.
 
 ## Release History
 
-### 2.3.0 — The "Explicitness" Update (Current)
-**Released:** February 6, 2026
-**Theme:** *Design Correction & Stability*
+### Release History
 
-**The Problem:** Previous versions relied on "Implicit Monkey Patching" (automatically intercepting library calls). This was convenient but fragile—if OpenAI updated their SDK, interception could break silently. It also violated the core principle of evidence: "Nothing should happen by magic."
-**The Improvement:**
-*   **Explicit API (`log_llm_call`)**: Introduced a direct way to log evidence. This is 100% stable and will never break when libraries update.
-*   **Wrapper Clients**: Added `wrap_openai()` and `TracedOpenAI` so you can add evidence capture with a single line of code change, rather than implicit magic.
-*   **Significance:** Shifts EPI from a "Logger" to a true "Evidence System" where every capture is an intentional, code-reviewed act.
+| Version | Released | Theme | Key Improvements |
+|:--------|:---------|:------|:-----------------|
+| **2.3.0** | 2026-02-06 | **Explicitness** | Explicit `log_llm_call` API, Wrapper Clients (`wrap_openai`), Removal of implicit patching magic. |
+| **2.2.1** | 2026-02-06 | **Fidelity** | Error visibility in Viewer (red badges), guaranteed `steps.jsonl` creation. |
+| **2.2.0** | 2026-01-30 | **Architecture** | **SQLite WAL** for crash-safety, **Async** support, Thread-safe `ContextVars`. |
+| **2.1.3** | 2026-01-24 | **Expansion** | **Google Gemini** support, `epi chat` for natural language querying of evidence. |
+| **2.1.2** | 2026-01-17 | **Trust** | **Client-side Verification** (in-browser Ed25519), Canonical CBOR serialization. |
+| **2.1.1** | 2025-12-16 | **Polish** | `epi doctor` diagnostic tool, Auto-repair for Windows PATH issues. |
+| **2.1.0** | 2025-12-16 | **Usability** | Offline Viewer integration, Interactive CLI mode, improved Windows support. |
+| **2.0.0** | 2025-12-16 | **MVP** | Official transition from prototype to MVP status. |
+| **1.1.1** | 2025-12-16 | **Fixes** | Critical fixes for CLI execution and version display strings. |
+| **1.1.0** | 2025-12-16 | **Metadata** | Added `Manifest` metadata support, `epi run` and `epi ls` commands introduced. |
+| **1.0.0** | 2025-12-15 | **Genesis** | Initial Release. Defined `.epi` ZIP format, Ed25519 signing, and basic Viewer. |
 
-### 2.2.1 — The "Fidelity" Update
-**Released:** February 6, 2026
-**Theme:** *Error Visibility & Fixes*
-
-**The Problem:** The Viewer didn't clearly distinguish between a successful HTTP call and a failed one. Also, `steps.jsonl` creation had edge cases where it might not initialize instantly.
-**The Improvement:**
-*   **Error Visualization:** The Viewer now renders `llm.error`, `http.error` in distinct red badges. You can see *exactly* why an agent failed (e.g., 401 Unauthorized or Context Length Exceeded).
-*   **Initialization Fixes:** Guaranteed `steps.jsonl` creation to prevent "missing file" errors on very short scripts.
-
-### 2.2.0 — The "Architecture" Update
-**Released:** January 30, 2026
-**Theme:** *Crash Safety & Async*
-
-**The Problem:**
-1.  **Crash Risk:** Early versions wrote JSONs at the end. If the process crashed (OOM), evidence was lost.
-2.  **Concurrency:** Global state made it hard to record async agents handling multiple requests.
-**The Improvement:**
-*   **SQLite WAL Storage:** Moved to a Write-Ahead-Log database. Every step is an atomic transaction. If the plug is pulled, the evidence survives.
-*   **Async Native:** Introduced `ContextVars` for thread-safety and an `AsyncRecorder` that doesn't block the main event loop.
-*   **Significance:** This made EPI "Production Ready" for high-concurrency backend agents.
-
-### 2.1.3 — The "Gemini" Update
-**Released:** January 24, 2026
-**Theme:** *Model Support & Querying*
-
-**The Problem:** EPI only supported OpenAI. Also, finding things in large logs was hard.
-**The Improvement:**
-*   **Google Gemini Support:** Added native patching for `google.generativeai`.
-*   **`epi chat`:** Added a CLI tool to "talk" to your evidence. You can ask "Why did the agent fail?" and it queries the `.epi` file content using an LLM.
-
-### 2.1.2 — The "Trust" Update
-**Released:** January 17, 2026
-**Theme:** *Security Verification*
-
-**The Problem:** The `.epi` file was just a container. Verification was server-side or CLI-only.
-**The Improvement:**
-*   **Client-Side Verification:** The Embedded Viewer (HTML) received a JavaScript crypto library (`noble-ed25519`). It verifies the file *inside the browser*.
-*   **Canonical Serialization:** Fixed hashing issues across different OSs (Windows/Linux) by enforcing JSON/CBOR canonical sorting.
-*   **Significance:** You could now send an `.epi` file to a regulator, and they could verify it in their browser without installing Python.
-
-### 2.1.1 — The "Windows" Update
-**Released:** December 16, 2025
-**Theme:** *Cross-Platform Polish*
-
-**The Problem:** Windows users faced `PATH` issues (command not found) and Unicode errors (crash on emojis).
-**The Improvement:**
-*   **Auto-Repair:** `epi_postinstall.py` was added to automatically fix Windows Registry `PATH` variables.
-*   **Terminal Fixes:** Forced UTF-8 output in the CLI to handle emojis on Windows PowerShell/CMD.
-*   **`epi doctor`**: Added a self-diagnostic command to debug install issues.
-
-### 1.0.0 — The "Genesis" Update
-**Released:** December 15, 2025
-**Theme:** *The MVP*
-
-**The Beginning:** The first release to the world.
-**Key Features:**
-*   Defined the `.epi` ZIP format.
-*   Implemented Ed25519 signing from day one.
-*   Created the first "Self-Contained Viewer" concept.
-*   **Significance:** Proved that AI logs could be treated as *artifacts* rather than just text streams.
-
-See [CHANGELOG.md](./CHANGELOG.md) for full details.
+See [CHANGELOG.md](./CHANGELOG.md) for detailed release notes.
 
 ---
 
