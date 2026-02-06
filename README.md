@@ -101,6 +101,38 @@ The embedded viewer allows any recipient to:
 
 No software installation required.
 
+
+---
+
+## Architecture
+
+How EPI turns execution into verifiable evidence:
+
+```mermaid
+flowchart LR
+    A[User Script] -->|epi run| B(Bootstrap Injection)
+    B --> C{Capture Layer}
+    C -->|Explicit API| D[Recorder]
+    C -->|Wrapper| D
+    
+    subgraph "Crash-Safe Zone"
+        D -->|Atomic Write| E[(SQLite WAL)]
+    end
+    
+    E -->|Finalize| F[Packer]
+    K[Private Key] -->|Ed25519 Sign| F
+    
+    F --> G[Artifact.epi]
+    
+    style E fill:#f9f,stroke:#333
+    style G fill:#9f9,stroke:#333
+```
+
+1.  **Injection**: The `epi run` CLI bootstraps `sitecustomize.py`, injecting the recorder before user code loads.
+2.  **Capture**: Calls are intercepted via explicit API `log_llm_call()` or wrappers.
+3.  **Persistence**: Steps are written atomically to a Write-Ahead-Log (WAL) SQLite DB. If the process crashes (OOM), evidence is safe on disk.
+4.  **Sealing**: On exit, the DB is converted to JSONL, hashed (Canonical CBOR), signed (Ed25519), and zipped.
+
 ---
 
 ## CLI Reference
