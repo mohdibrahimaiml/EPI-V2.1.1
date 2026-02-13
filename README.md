@@ -2,9 +2,9 @@
   <img src="https://raw.githubusercontent.com/mohdibrahimaiml/epi-recorder/main/docs/assets/logo.png" alt="EPI Logo" width="180"/>
   <br>
   <h1 align="center">EPI</h1>
-  <p align="center"><strong>Execution recording and verification system for AI Agents/ AI Systems</strong></p>
+  <p align="center"><strong>Execution evidence system for AI agents</strong></p>
   <p align="center">
-    <em>Capture, replay, and audit agent runs as cryptographically sealed artifacts</em>
+    <em>Capture, seal, and verify every decision your agents make</em>
   </p>
 </p>
 
@@ -19,363 +19,19 @@
 
 ## What is EPI?
 
-**EPI is not a logging service or monitoring dashboard.**
-
-It's a **file format and recorder** that turns agent execution into durable, verifiable artifacts.
-
-An `.epi` file is like a **flight recorder for AI systems**—it captures every decision, tool call, and state transition, sealed with cryptographic signatures.
-
-**What this means:**
-- **Capture once, inspect forever** (works offline, no cloud dependency)
-- **Complete execution history** (prompts, responses, state, timestamps, costs)
-- **Tamper-evident proof** (Ed25519 signatures for compliance and audits)
-- **Replay production failures** (debug locally with full context)
-
----
-
-## The Problem
-
-**Production agents fail mysteriously. Debugging takes hours.**
-
-**Real scenario:**
-- Your LangGraph agent processed 47 steps overnight
-- Step 31 made a bad decision that cascaded into failure
-- CloudWatch logs expired after 7 days
-- You have no idea what the agent was "thinking" at step 31
-- Reproduce? Impossible—you don't have the exact state, prompts, or environment
-
-**Traditional logs don't help:**
-- ❌ Expire (context lost after 30 days)
-- ❌ Incomplete (missing agent state, checkpoints, reasoning)
-- ❌ Not reproducible (can't replay locally)
-- ❌ Unverifiable (no cryptographic proof for audits)
-
-**Engineers waste 4-8 hours per bug** reconstructing what happened.
-
----
-
-
-## Quick Start
-
-### 1. Install
-
-```bash
-pip install epi-recorder
-```
-
-### 2. Capture an Agent Run (3 lines of code)
-
-```python
-from epi_recorder import record, wrap_openai
-from openai import OpenAI
-
-# Just wrap your client
-client = wrap_openai(OpenAI())
-
-# Capture everything automatically
-with record("my_agent.epi"):
-    response = client.chat.completions.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": "Plan a trip to Tokyo"}]
-    )
-```
-
-**That's it.** EPI captured:
-- ✅ The full prompt & response
-- ✅ Token usage & cost ($0.0023)
-- ✅ Timestamp & model info
-- ✅ Environment snapshot
-
-### 3. View the Results
-
-```bash
-epi view my_agent.epi
-```
-
-**Opens in your browser**—no login, no cloud, works offline forever.
-
-**See:**
-- 📜 Full conversation timeline
-- 💰 Cost breakdown per call
-- 🔍 State transitions (if using LangGraph)
-- 🔐 Cryptographic verification status
-
-### 4. Analyze Performance (NEW in v2.4.0!)
-
-```python
-from epi_recorder import AgentAnalytics
-
-analytics = AgentAnalytics("./production_runs")
-summary = analytics.performance_summary()
-
-print(f"Success rate: {summary['success_rate']:.1%}")
-print(f"Avg cost: ${summary['avg_cost_per_run']:.3f}")
-print(f"Most common error: {summary['top_errors'][0]}")
-
-# Generate visual dashboard
-analytics.generate_report("dashboard.html")  # Opens in browser
-```
-
-**[→ See Full Documentation](docs/)** | **[→ Download Example .epi File](examples/demo_agent.epi)**
-
----
-
-## Real Incident: How EPI Saved 4 Hours
-
-**Production scenario (fintech startup):**
-
-An AutoGen agent processed customer refund requests overnight. One request was incorrectly approved for $12,000 (should have been $120).
-
-**Without EPI:**
-- Logs showed "refund approved" but not why
-- LLM conversation history incomplete (truncated after 20 messages)
-- No state captured (agent's reasoning chain lost)
-- Took 4 hours to reproduce the exact scenario
-- Never found root cause with certainty
-
-**With EPI:**
-- Opened `refund_agent_20260211.epi` (generated automatically)
-- Viewed step 17: LLM misread "$120.00" as "$12000" (OCR preprocessing bug)
-- Saw exact prompt, response, and intermediate state
-- Fixed preprocessing logic in 15 minutes
-- `.epi` artifact shared with compliance team as proof of fix
-
-**Result:** 4 hours → 15 minutes. Plus cryptographic proof for regulators.
-
----
-
-## 🚀 Beta Program
-
-**Looking for 10 teams** to pilot EPI in production:
-
-**You get:**
-- Priority support (direct access to founders)
-- Free forever (beta partners never pay)
-- Custom integrations
-
-**Ideal if you:**
-- Run LangGraph/AutoGen/CrewAI in production
-- Debug agent failures weekly
-- Need audit trails for compliance
-
-**[→ Apply for Beta Access](https://www.epilabs.org/contact.html)**
-
----
-
-## The Solution
-
-**EPI captures everything, automatically.**
-
-Every agent run becomes a `.epi` file containing:
-- ✅ Full execution timeline (every prompt, response, tool call)
-- ✅ Agent state at each step (memory, checkpoints, reasoning)
-- ✅ Environment snapshot (model, temperature, libraries)
-- ✅ Cryptographic signature (tamper-evident proof)
-- ✅ Self-contained viewer (opens in any browser, works offline)
-
-**Debug 10× faster:**
-- Open `.epi` file from 3 months ago
-- See exact state at step 31
-- Replay failure locally
-- Fix in minutes, not hours
-
----
-
-## ⭐ New in v2.5.0
-
-### Async Support
-
-Perfect for LangGraph, AutoGen, and async-first agent frameworks:
-
-```python
-# Async mode (non-blocking I/O)
-async with record("agent.epi"):
-    response = await async_client.chat.completions.create(...)
-    await epi.alog_step("custom.event", {"reasoning": "..."})
-```
-
-### Agent Analytics Engine
-
-Track performance across 100s of agent runs:
-
-```python
-from epi_recorder import AgentAnalytics
-
-analytics = AgentAnalytics("./production_runs")
-summary = analytics.performance_summary()
-
-# Get insights
-print(f"Success Rate: {summary['success_rate']:.1f}%")
-print(f"This Week Cost: ${summary['cost_this_week']:.2f}")
-print(f"Avg Duration: {summary['avg_duration_seconds']:.1f}s")
-
-# Visual dashboard
-analytics.generate_report("performance.html")
-```
-
-**Features:**
-- 📈 Success rate trends over time
-- 💵 Cost analysis (daily/weekly/monthly)
-- 🐛 Error pattern detection
-- 🔧 Tool usage distribution
-- 📊 Period-to-period comparisons
-
-### Local LLM Support (Ollama)
-
-Test with **FREE** local LLMs—zero API costs:
-
-```python
-from openai import OpenAI
-from epi_recorder import record, wrap_openai
-
-# Point to Ollama (OpenAI-compatible API)
-client = wrap_openai(OpenAI(
-    base_url="http://localhost:11434/v1",
-    api_key="ollama"  # Doesn't matter for local
-))
-
-# Record just like any other LLM
-with record("test.epi"):
-    response = client.chat.completions.create(
-        model="deepseek-r1:7b",
-        messages=[{"role": "user", "content": "Debug this code..."}]
-    )
-```
-
-**Benefits:** Unlimited testing, complete privacy, $0 API costs.
-
-### LangGraph Integration
-
-Native checkpoint saver for LangGraph state management:
-
-```python
-from langgraph.graph import StateGraph
-from epi_recorder.integrations import EPICheckpointSaver
-
-# Build your graph
-graph = StateGraph(AgentState)
-# ... define nodes and edges ...
-
-# Use EPI as checkpoint backend
-checkpointer = EPICheckpointSaver("my_agent.epi")
-
-# Run with automatic state capture
-result = graph.invoke(
-    {"messages": [HumanMessage(content="...")]},
-    {"configurable": {"thread_id": "user_123"}},
-    checkpointer=checkpointer
-)
-
-# View all state transitions
-# $ epi view my_agent.epi
-```
-
-**Automatically captures:**
-- ✅ All state transitions between nodes
-- ✅ Checkpoint metadata (thread_id, timestamp)
-- ✅ Agent decision points
-- ✅ Large state handling (hashes states >1MB)
-
----
-
-## Why EPI vs. Alternatives?
-
-**EPI is not an observability dashboard. It's a durable execution artifact system.**
-
-Dashboards (LangSmith, Arize) give you live metrics. EPI gives you portable, offline-verifiable records that last forever.
-
-### Comparison
-
-| Feature | **EPI** | LangSmith | Arize | W&B |
-|:--------|:--------|:----------|:------|:----|
-| **Offline-first** | ✅ Works without internet | ❌ Cloud required | ❌ Cloud required | ❌ Cloud required |
-| **Agent state capture** | ✅ Full checkpoints (LangGraph native) | ⚠️ Traces only | ⚠️ Predictions only | ⚠️ Experiments only |
-| **Cryptographic proof** | ✅ Ed25519 signatures | ❌ None | ❌ None | ❌ None |
-| **Format lock-in** | ✅ Open spec (`.epi` format) | ❌ Proprietary API | ❌ Proprietary | ❌ Proprietary |
-| **Compliance-ready** | ✅ EU AI Act, FDA, litigation | ⚠️ Limited | ⚠️ Limited | ❌ Not designed |
-| **Local LLM support** | ✅ Ollama, llama.cpp | ❌ Cloud only | ❌ Cloud only | ❌ Cloud only |
-| **Cost** | ✅ Free (open source) | 💰 $99+/mo | 💰 Custom pricing | 💰 $50+/mo |
-| **Data privacy** | ✅ Self-hosted, offline | ⚠️ Cloud-dependent | ⚠️ Cloud-dependent | ⚠️ Cloud-dependent |
-
-### Use EPI When You Need:
-
-- **Durable artifacts** (not just live dashboards that expire)
-- **Agent state replay** (full checkpoints, not just LLM traces)
-- **Regulatory compliance** (signatures, offline verification, audit trails)
-- **No vendor lock-in** (open format, self-hosted, works forever)
-- **Local development** (Ollama, no cloud dependency)
-
-### Use LangSmith/Arize When You Need:
-
-- Real-time monitoring dashboards (live metrics)
-- Team collaboration features (built-in sharing, comments)
-- Managed infrastructure (no self-hosting, SaaS convenience)
-
-**EPI complements these tools**—use both for complete agent observability.
-
----
-
-## Use Cases
-
-### For Developers (Daily Workflow) — Primary Use Case
-
-**You should use EPI if you:**
-- 🔍 **Debug multi-step agent failures** (see exact decision tree)
-- 🧪 **A/B test different prompts or models** (compare runs side-by-side)
-- 📊 **Track agent performance over time** (success rates, costs, errors)
-- 🔁 **Replay production failures locally** (with Ollama or real LLMs)
-- 👥 **Collaborate on agent debugging** (share `.epi` files with team)
-
-**Perfect for:**
-- LangGraph / LangChain developers
-- AutoGen / CrewAI users
-- Custom agent framework builders
-- ML engineers running production agents
-
-### For Enterprises (Compliance) — Discovered Value
-
-**As your agents scale, EPI provides:**
-- 📝 **Audit trails for regulators** (EU AI Act, FDA, SEC filings)
-- ⚖️ **Litigation-grade evidence** (cryptographically signed, tamper-evident)
-- 🔐 **Data governance** (PII redaction, retention policies, GDPR compliance)
-- 🏢 **Enterprise SLAs** (on-prem deployment, SSO, custom retention)
-
-### Not a Replacement For
-
-**EPI complements (doesn't replace):**
-- **Real-time monitoring** (Datadog, New Relic) → EPI is for post-hoc forensics
-- **Observability dashboards** (LangSmith, Arize) → EPI is for durable artifacts
-- **Production logging** (CloudWatch, Splunk) → EPI preserves what logs lose (state, context)
-
----
-
-## The `.epi` Artifact Format
-
-An `.epi` file is a **self-contained ZIP archive** with a defined structure.
-
-```
-my_agent.epi
-├── mimetype              # "application/epi+zip"
-├── manifest.json         # Metadata + Ed25519 signature
-├── steps.jsonl           # Execution timeline (NDJSON)
-├── env.json              # Runtime environment snapshot
-└── viewer/
-    └── index.html        # Self-contained offline viewer
-```
-
-**Key properties:**
-- **Self-contained:** All data in one file (no external dependencies)
-- **Universally viewable:** Opens in any browser (like PDF)
-- **Tamper-evident:** Ed25519 signatures prove integrity
-- **Durable:** Works offline forever (no API keys, no cloud)
-
-See **[EPI Specification](docs/EPI-SPEC.md)** for technical details.
+EPI is a **file format and recorder** that turns agent execution into durable, verifiable artifacts.
+
+An `.epi` file is a **flight recorder for AI systems** — it captures every decision, tool call, and state transition, sealed with cryptographic signatures. No cloud dependency. No vendor lock-in. Works offline forever.
+
+**Core guarantees:**
+- **Capture once, inspect forever** — self-contained artifacts with embedded viewer
+- **Complete execution history** — prompts, responses, state, timestamps, costs
+- **Tamper-evident proof** — Ed25519 signatures for compliance and audits
+- **Replay production failures** — debug locally with full context
 
 ---
 
 ## Architecture
-
-How EPI turns execution into verifiable evidence:
 
 ```mermaid
 flowchart LR
@@ -395,53 +51,198 @@ flowchart LR
     style G fill:#9f9,stroke:#333
 ```
 
-**Key design choices:**
+**Design principles:**
 
-1. **Crash-safe:** SQLite WAL ensures no data loss (even if agent crashes)
-2. **Explicit capture:** Evidence is intentional (reviewable in code)
-3. **Cryptographic proof:** Ed25519 signatures (can't be forged)
-4. **Offline-first:** No cloud dependency (works in air-gapped environments)
-
----
-
-## Roadmap
-
-**Current (v2.5.0):**
-- ✅ Capture, verify, replay agent runs
-- ✅ LangGraph checkpoint integration
-- ✅ Agent analytics across runs
-- ✅ Anthropic Claude wrapper
-
-**Next 6 months:**
-- Time-travel debugging (step through any past run)
-- Team collaboration features
-- Cloud platform (optional)
-
+1. **Crash-safe** — SQLite WAL ensures no data loss, even if agents crash mid-execution
+2. **Explicit capture** — evidence is intentional and reviewable in code
+3. **Cryptographic proof** — Ed25519 signatures that can't be forged or backdated
+4. **Offline-first** — no cloud dependency; works in air-gapped environments
 
 ---
 
-## CLI Reference
+## Quick Start
 
-### Primary Commands
+### 1. Install
 
-| Command | Purpose |
-|:--------|:--------|
-| `epi run <script.py>` | Capture execution evidence to `.epi` |
-| `epi verify <file.epi>` | Verify artifact integrity and signature |
-| `epi view <file.epi>` | Open artifact in browser viewer |
-| `epi keys list` | Manage signing keys |
-| `epi --version` | Show EPI version |
+```bash
+pip install epi-recorder
+```
 
-### Advanced Tools
+### 2. Record an Agent Run
 
-These tools consume evidence artifacts for analysis:
+```python
+from epi_recorder import record, wrap_openai
+from openai import OpenAI
 
-| Command | Purpose |
-|:--------|:--------|
-| `epi debug <file.epi>` | Heuristic analysis (loops, errors, inefficiencies) |
-| `epi chat <file.epi>` | Natural language querying via LLM |
+client = wrap_openai(OpenAI())
 
-> **Note:** `debug` and `chat` are convenience tools built on top of the evidence format.
+with record("my_agent.epi"):
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": "Plan a trip to Tokyo"}]
+    )
+```
+
+That's it. EPI captures the full prompt and response, token usage and cost, timestamps and model info, and a complete environment snapshot.
+
+### 3. Inspect the Results
+
+```bash
+epi view my_agent.epi    # Opens in browser — no login, no cloud
+epi verify my_agent.epi  # Verify cryptographic integrity
+```
+
+### 4. Analyze Performance Across Runs
+
+```python
+from epi_recorder import AgentAnalytics
+
+analytics = AgentAnalytics("./production_runs")
+summary = analytics.performance_summary()
+
+print(f"Success rate: {summary['success_rate']:.1%}")
+print(f"Avg cost: ${summary['avg_cost_per_run']:.3f}")
+print(f"Most common error: {summary['top_errors'][0]}")
+
+analytics.generate_report("dashboard.html")
+```
+
+**[Full Documentation →](docs/)** · **[Example .epi File →](examples/demo_agent.epi)**
+
+---
+
+## The Problem EPI Solves
+
+Production agents fail in ways traditional logging can't capture.
+
+**Scenario:** A LangGraph agent processes 47 steps overnight. Step 31 makes a bad decision that cascades into failure. CloudWatch logs expired. You have no idea what the agent was "thinking."
+
+| Traditional Logs | EPI Artifacts |
+|:-----------------|:--------------|
+| Expire after retention period | Persist forever as files |
+| Missing agent state and reasoning | Complete checkpoint history |
+| Can't replay locally | Full local replay with Ollama |
+| No cryptographic proof | Ed25519 signatures for audits |
+
+**Real incident:** An AutoGen agent approved a $12,000 refund instead of $120. With EPI, the team opened the `.epi` file, found the OCR preprocessing bug at step 17, and fixed it in 15 minutes. The signed artifact served as compliance evidence.
+
+---
+
+## Supported Providers
+
+| Provider | Integration |
+|:---------|:------------|
+| OpenAI | `wrap_openai()` wrapper or explicit API |
+| Anthropic | `wrap_anthropic()` wrapper or explicit API |
+| Google Gemini | Explicit API |
+| Ollama (local) | `wrap_openai()` with local endpoint |
+| Any HTTP LLM | `log_llm_call()` explicit API |
+
+EPI is provider-agnostic. The explicit API works with any response format.
+
+---
+
+## Key Features
+
+### Async Support
+
+Non-blocking I/O for LangGraph, AutoGen, and async-first frameworks:
+
+```python
+async with record("agent.epi"):
+    response = await async_client.chat.completions.create(...)
+    await epi.alog_step("custom.event", {"reasoning": "..."})
+```
+
+### Local LLM Support
+
+Record against Ollama for free, unlimited development:
+
+```python
+client = wrap_openai(OpenAI(
+    base_url="http://localhost:11434/v1",
+    api_key="ollama"
+))
+
+with record("test.epi"):
+    response = client.chat.completions.create(
+        model="deepseek-r1:7b",
+        messages=[{"role": "user", "content": "Debug this code..."}]
+    )
+```
+
+### LangGraph Checkpoint Integration
+
+Native checkpoint saver for LangGraph state management:
+
+```python
+from langgraph.graph import StateGraph
+from epi_recorder.integrations import EPICheckpointSaver
+
+graph = StateGraph(AgentState)
+checkpointer = EPICheckpointSaver("my_agent.epi")
+
+result = graph.invoke(
+    {"messages": [HumanMessage(content="...")]},
+    {"configurable": {"thread_id": "user_123"}},
+    checkpointer=checkpointer
+)
+```
+
+Captures all state transitions, checkpoint metadata, agent decision points, and handles large states (>1MB) via hashing.
+
+### Agent Analytics
+
+Track performance across hundreds of runs:
+
+```python
+analytics = AgentAnalytics("./production_runs")
+summary = analytics.performance_summary()
+analytics.generate_report("performance.html")
+```
+
+Provides success rate trends, cost analysis, error pattern detection, tool usage distribution, and period-to-period comparisons.
+
+---
+
+## Why EPI vs. Alternatives
+
+EPI is not an observability dashboard. It's a **durable execution artifact system.**
+
+Dashboards give you live metrics. EPI gives you portable, offline-verifiable records that last forever.
+
+| Feature | **EPI** | LangSmith | Arize | W&B |
+|:--------|:--------|:----------|:------|:----|
+| **Offline-first** | Works without internet | Cloud required | Cloud required | Cloud required |
+| **Agent state capture** | Full checkpoints (LangGraph native) | Traces only | Predictions only | Experiments only |
+| **Cryptographic proof** | Ed25519 signatures | None | None | None |
+| **Format lock-in** | Open spec (`.epi` format) | Proprietary API | Proprietary | Proprietary |
+| **Compliance-ready** | EU AI Act, FDA, litigation | Limited | Limited | Not designed |
+| **Local LLM support** | Ollama, llama.cpp | Cloud only | Cloud only | Cloud only |
+| **Cost** | Free (open source) | $99+/mo | Custom pricing | $50+/mo |
+| **Data privacy** | Self-hosted, offline | Cloud-dependent | Cloud-dependent | Cloud-dependent |
+
+**EPI complements these tools** — use both for complete agent observability.
+
+---
+
+## The `.epi` Artifact Format
+
+An `.epi` file is a self-contained ZIP archive with a defined structure:
+
+```
+my_agent.epi
+├── mimetype              # "application/epi+zip"
+├── manifest.json         # Metadata + Ed25519 signature
+├── steps.jsonl           # Execution timeline (NDJSON)
+├── env.json              # Runtime environment snapshot
+└── viewer/
+    └── index.html        # Self-contained offline viewer
+```
+
+**Properties:** self-contained (no external dependencies), universally viewable (opens in any browser), tamper-evident (Ed25519 signatures), and durable (works offline forever).
+
+See **[EPI Specification](docs/EPI-SPEC.md)** for technical details.
 
 ---
 
@@ -454,34 +255,72 @@ These tools consume evidence artifacts for analysis:
 | **Key Storage** | Local keyring, user-controlled |
 | **Verification** | Client-side, zero external dependencies |
 
-Signatures are **optional but recommended**. Unsigned artifacts are valid but can't prove origin.
+Signatures are optional but recommended. Unsigned artifacts are valid but can't prove origin.
 
 ---
 
-## Supported Providers
+## Use Cases
 
-| Provider | Capture Method |
-|:---------|:---------------|
-| OpenAI | Wrapper client (`wrap_openai`) or explicit API |
-| Anthropic | Wrapper client (`wrap_anthropic`) or explicit API |
-| Google Gemini | Explicit API |
-| Ollama (local) | Wrapper client (OpenAI-compatible) |
-| Any HTTP LLM | Explicit API via `log_llm_call()` |
+### Developer Workflow
 
-EPI doesn't depend on provider-specific integrations—the explicit API works with any response format.
+- Debug multi-step agent failures with full decision tree visibility
+- A/B test prompts and models with side-by-side run comparison
+- Track agent performance over time (success rates, costs, errors)
+- Replay production failures locally with Ollama or real LLMs
+- Share `.epi` files with teammates for collaborative debugging
+
+### Enterprise Compliance
+
+- Audit trails for regulators (EU AI Act, FDA, SEC)
+- Litigation-grade evidence with cryptographic signatures
+- Data governance with PII redaction and retention policies
+- On-premises deployment for air-gapped environments
+
+### Works With
+
+LangGraph · LangChain · AutoGen · CrewAI · Custom frameworks · Any Python agent
+
+---
+
+## CLI Reference
+
+| Command | Purpose |
+|:--------|:--------|
+| `epi run <script.py>` | Record execution to `.epi` |
+| `epi verify <file.epi>` | Verify integrity and signature |
+| `epi view <file.epi>` | Open in browser viewer |
+| `epi keys list` | Manage signing keys |
+| `epi debug <file.epi>` | Heuristic analysis |
+| `epi chat <file.epi>` | Natural language querying |
+
+See **[CLI Reference](docs/CLI.md)** for full documentation.
+
+---
+
+## Roadmap
+
+**Current (v2.5.0):**
+- Capture, verify, and replay agent runs
+- LangGraph checkpoint integration
+- Agent analytics across runs
+- OpenAI and Anthropic wrapper clients
+
+**Next:**
+- Time-travel debugging (step through any past run)
+- Team collaboration features
+- Managed cloud platform (optional)
 
 ---
 
 ## Release History
 
-| Version | Released | Theme | Key Improvements |
-|:--------|:---------|:------|:-----------------|
-| **2.5.0** | 2026-02-13 | **Anthropic & Fixes** | **Anthropic Claude** wrapper (`wrap_anthropic`), critical path resolution fix, enhanced parameter tracking. |
-| **2.4.0** | 2026-02-12 | **Agent Development** | **Agent Analytics** Engine, **Async/Await** support, **LangGraph** checkpoint integration, **Ollama** local LLM support. |
-| **2.3.0** | 2026-02-06 | **Explicitness** | Explicit `log_llm_call` API, Wrapper Clients (`wrap_openai`), Removal of implicit patching magic. |
-| **2.2.1** | 2026-02-06 | **Fidelity** | Error visibility in Viewer (red badges), guaranteed `steps.jsonl` creation. |
-| **2.2.0** | 2026-01-30 | **Architecture** | **SQLite WAL** for crash-safety, **Async** support, Thread-safe `ContextVars`. |
-| **2.1.3** | 2026-01-24 | **Expansion** | **Google Gemini** support, `epi chat` for natural language querying of evidence. |
+| Version | Date | Highlights |
+|:--------|:-----|:-----------|
+| **2.5.0** | 2026-02-13 | Anthropic Claude wrapper, path resolution fix |
+| **2.4.0** | 2026-02-12 | Agent Analytics, async/await, LangGraph, Ollama |
+| **2.3.0** | 2026-02-06 | Explicit API, wrapper clients |
+| **2.2.0** | 2026-01-30 | SQLite WAL, async support, thread safety |
+| **2.1.3** | 2026-01-24 | Google Gemini support |
 
 See **[CHANGELOG.md](./CHANGELOG.md)** for detailed release notes.
 
@@ -489,38 +328,23 @@ See **[CHANGELOG.md](./CHANGELOG.md)** for detailed release notes.
 
 ## Documentation
 
-### Core Documentation
-
 | Document | Description |
 |:---------|:------------|
-| **[EPI Specification](docs/EPI-SPEC.md)** | Complete technical specification for the `.epi` file format |
-| **[CLI Reference](docs/CLI.md)** | Full command-line interface documentation |
-| **[CHANGELOG](CHANGELOG.md)** | Detailed release notes for all versions |
-| **[Contributing Guide](CONTRIBUTING.md)** | How to contribute to EPI development |
-| **[Security Policy](SECURITY.md)** | Security guidelines and vulnerability reporting |
+| **[EPI Specification](docs/EPI-SPEC.md)** | Technical specification for `.epi` format |
+| **[CLI Reference](docs/CLI.md)** | Command-line interface documentation |
+| **[CHANGELOG](CHANGELOG.md)** | Release notes |
+| **[Contributing](CONTRIBUTING.md)** | Contribution guidelines |
+| **[Security](SECURITY.md)** | Security policy and vulnerability reporting |
 
-### Feature Documentation
+---
 
-| Feature | Guide |
-|:--------|:------|
-| **Agent Analytics** | [ANALYTICS_DEPLOYMENT.md](ANALYTICS_DEPLOYMENT.md) - Track performance across runs |
-| **LangGraph Integration** | [LANGGRAPH_DOCS_COMPLETE.md](LANGGRAPH_DOCS_COMPLETE.md) - Checkpoint saver setup |
-| **Async & Ollama** | [ASYNC_OLLAMA_COMPLETE.md](ASYNC_OLLAMA_COMPLETE.md) - Async support + local LLMs |
+## Beta Program
 
-### Examples & Testing
+We're looking for teams running agents in production.
 
-| Resource | Description |
-|:---------|:------------|
-| **[Examples Directory](examples/)** | 25+ working code examples |
-| **[Test Results](TEST_RESULTS_V2_4_0.md)** | v2.4.0 comprehensive test report (21/21 passing) |
-| **[Technical Overview](technical_overview.md)** | Architecture deep-dive |
+**You get:** priority support, free forever, custom integrations.
 
-### Quick Links
-
-- 📖 **[Full Technical Docs](docs/COMPLETE_TECHNICAL_DOCUMENTATION.md)** - Everything in one place
-- 🚀 **[Apply for Beta](https://www.epilabs.org/contact.html)** - Get priority support
-- 💬 **[GitHub Discussions](https://github.com/mohdibrahimaiml/epi-recorder/discussions)** - Ask questions
-- 🐛 **[Report Issues](https://github.com/mohdibrahimaiml/epi-recorder/issues)** - Bug reports & feature requests
+**[Apply for Beta Access →](https://www.epilabs.org/contact.html)**
 
 ---
 
@@ -533,20 +357,18 @@ pip install -e ".[dev]"
 pytest
 ```
 
-We welcome contributions! See **[CONTRIBUTING.md](./CONTRIBUTING.md)** for guidelines.
+See **[CONTRIBUTING.md](./CONTRIBUTING.md)** for guidelines.
 
 ---
 
-
-
 ## Traction
 
-**6,500+ downloads** in 10 weeks | **v2.4.0** shipped Feb 2026
+**6,500+ downloads** in 10 weeks · **v2.5.0** shipped Feb 2026
 
-> *"EPI saved us 4 hours debugging a production agent failure."*  
+> *"EPI saved us 4 hours debugging a production agent failure."*
 > — ML Engineer, Fintech
 
-> *"The LangGraph integration is killer. Zero config."*  
+> *"The LangGraph integration is killer. Zero config."*
 > — AI Platform Team Lead
 
 ---
@@ -556,6 +378,6 @@ We welcome contributions! See **[CONTRIBUTING.md](./CONTRIBUTING.md)** for guide
 MIT License. See **[LICENSE](./LICENSE)**.
 
 <p align="center">
-  <strong>Built with ❤️ by <a href="https://epilabs.org">EPI Labs</a></strong><br>
-  <em>Making AI agent execution verifiable, one `.epi` file at a time.</em>
+  <strong>Built by <a href="https://epilabs.org">EPI Labs</a></strong><br>
+  <em>Making AI agent execution verifiable.</em>
 </p>
